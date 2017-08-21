@@ -59,5 +59,6 @@ onlineM = new OnlineM(context, port, new OnlineMInterface() {
             }
         });
         onlineM.setConfig(dirCache,dirDownload);//设置缓存和下载目录
+        onlineM.startServer();
         onlineM.load(url);//开始加载一个网络音频
 </pre>

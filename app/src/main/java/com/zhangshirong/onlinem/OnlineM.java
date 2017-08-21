@@ -27,10 +27,10 @@ public class OnlineM {
         server = new OnlineMServer(this,port);
         media = new MediaPlayer();
     }
-    public void serverStart(){
+    public void startServer(){
         server.start();
     }
-    public void serverStop(){
+    public void stopServer(){
         server.stop();
     }
     public void setConfig(String cacheDir,String downloadDir){

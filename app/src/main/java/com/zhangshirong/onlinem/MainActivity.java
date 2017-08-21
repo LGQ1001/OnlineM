@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         });
         String dirBase = Environment.getExternalStorageDirectory().getAbsolutePath();
         onlineM.setConfig(dirBase+"/OnlineM/Cache",dirBase+"/OnlineM/Download");
-        onlineM.serverStart();
+        onlineM.startServer();
         ((Button)findViewById(R.id.loadStart)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
