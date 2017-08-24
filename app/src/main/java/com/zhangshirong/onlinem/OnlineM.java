@@ -5,6 +5,8 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 /**
@@ -19,6 +21,7 @@ public class OnlineM {
     protected String downloadDir;
     protected OnlineMCacheManager cacheManager;
     protected OnlineMServer server;
+    private Timer timer;
     private Context context;
     public OnlineM(Context context,int port,OnlineMInterface listener){
         this.listener = listener;
@@ -26,6 +29,13 @@ public class OnlineM {
         cacheManager = new OnlineMCacheManager(this);
         server = new OnlineMServer(this,port);
         media = new MediaPlayer();
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                tick();
+            }
+        },0,1000);
     }
     public void startServer(){
         server.start();
@@ -38,6 +48,7 @@ public class OnlineM {
         this.downloadDir = downloadDir;
     }
     public void load(final String url){
+        mediaIsReady = false;
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -54,6 +65,10 @@ public class OnlineM {
     public void mediaSeekTo(int msec){
         if(media != null && mediaIsReady){
             media.seekTo(msec);
+            int cur = media.getCurrentPosition();
+            int duration = media.getDuration();
+            if(cur > duration)cur = duration;
+            listener.onMediaPlayProgress((float)cur/duration,cur,duration);
         }
     }
     public void mediaStart(){
@@ -82,11 +97,23 @@ public class OnlineM {
         mediaIsReady = false;
         listener = null;
         server.release();
+        timer.cancel();
+        timer = null;
     }
-    public void mediaStop(){
-        if(media != null){
+    public void mediaStop() {
+        if (media != null) {
             media.stop();
             mediaIsReady = false;
+        }
+    }
+    private void tick(){
+        int cur = 0;
+        int duration = 0;
+        if(mediaIsReady && media.isPlaying()){
+            cur = media.getCurrentPosition();
+            duration = media.getDuration();
+            if(cur > duration)cur = duration;
+            listener.onMediaPlayProgress((float)cur/duration,cur,duration);
         }
     }
     protected void mediaPrepare(String uri){
@@ -101,23 +128,6 @@ public class OnlineM {
                 public void onPrepared(final MediaPlayer media) {
                     mediaIsReady = true;
                     OnlineM.this.listener.onMediaPrepared();
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            int cur = media.getCurrentPosition();
-                            int duration = media.getDuration();
-                            while (cur < duration && mediaIsReady){
-                                if(mediaIsReady)listener.onMediaPlayProgress((float)cur/duration,cur,duration);
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                if(mediaIsReady)cur = media.getCurrentPosition();
-                            }
-                            listener.onMediaPlayProgress(1f,duration,duration);
-                        }
-                    }).start();
                 }
             });
             media.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
